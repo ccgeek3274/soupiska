@@ -1,0 +1,13 @@
+{
+  "name": "sscr-soupiska",
+  "version": "1.0.0",
+  "description": "Generátor xlsx soupisky družstva ŠSČR (jedna HTML stránka, data z api.chess.cz)",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "exceljs": "^4.4.0",
+    "jsdom": "^29.1.1"
+  }
+}
