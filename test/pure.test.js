@@ -20,6 +20,7 @@ vm.runInContext(m[1], ctx);
 const {
   normArr, fold, matchName, isActiveMember, numOrBlank,
   memberToPlayer, rosterToPlayer, parseCompetitions, addPlayerDedup, resolveFname,
+  toggleOzn, parseFlags,
 } = ctx;
 
 // Objekty vytvořené ve vm-kontextu mají jiný prototyp (jiný realm) → deepStrictEqual
@@ -65,6 +66,29 @@ test('memberToPlayer — mapování členů oddílu', () => {
 test('rosterToPlayer — playerId → LOK, rok/FIDE prázdné', () => {
   const p = rosterToPlayer({ rosterPosition: 1, playerId: 708, playerName: 'Novák Radomír', playerCzeElo: 2028, playerFideElo: 2058 });
   assert.deepEqual(plain(p), { jmeno: 'Novák Radomír', rok: '', lok: 708, fide: '', ozn: '', z: false, eloLok: 2028, eloFide: 2058, source: 'roster' });
+  // playerFlags se předvyplní do Označení a Z
+  const p2 = rosterToPlayer({ playerId: 5, playerName: 'X Y', playerFlags: ' H Z' });
+  assert.equal(p2.ozn, 'H'); assert.equal(p2.z, true);
+  const p3 = rosterToPlayer({ playerId: 6, playerName: 'A B', playerFlags: 'K' });
+  assert.equal(p3.ozn, 'K'); assert.equal(p3.z, false);
+});
+
+test('toggleOzn — skupinová pravidla (K|ZK, H|V|C), toggle, řazení', () => {
+  assert.equal(toggleOzn('', 'K'), 'K');
+  assert.equal(toggleOzn('K', 'ZK'), 'ZK');        // K a ZK ne současně
+  assert.equal(toggleOzn('K', 'H'), 'K H');        // kombinace skupin OK
+  assert.equal(toggleOzn('K H', 'V'), 'K V');      // max jedna z H/V/C
+  assert.equal(toggleOzn('K H', 'H'), 'K');        // klik na zvolené = odznačit
+  assert.equal(toggleOzn('K H', 'K'), 'H');
+  assert.equal(toggleOzn('H', 'K'), 'K H');        // řazení K/ZK před H/V/C
+  assert.equal(toggleOzn('K', 'X'), 'K');          // neznámý kód ignorován
+});
+
+test('parseFlags — Označení + Z z playerFlags', () => {
+  assert.deepEqual(plain(parseFlags(' H Z')), { ozn: 'H', z: true });
+  assert.deepEqual(plain(parseFlags('ZK V')), { ozn: 'ZK V', z: false });
+  assert.deepEqual(plain(parseFlags('')), { ozn: '', z: false });
+  assert.deepEqual(plain(parseFlags(null)), { ozn: '', z: false });
 });
 
 test('parseCompetitions — regiony seřazené, soutěže dle úrovně', () => {

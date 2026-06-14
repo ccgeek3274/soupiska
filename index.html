@@ -36,9 +36,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--acc
 .field { margin-top:16px; } .field:first-child { margin-top:0; }
 .card-sub { margin:-8px 0 16px; font-size:13px; color:var(--muted); }
 /* Pole, jejichž hodnota se propisuje do xlsx — jemně žlutě. */
-.xlsx-field, .players td input:not([type=checkbox]), .players td select { background:#fff8e1; }
-.players td.col-z { background:#fff8e1; }
-.xlsx-field:focus, .players td input:focus, .players td select:focus { background:#fff; }
+.xlsx-field { background:#fff8e1; }
+.xlsx-field:focus { background:#fff; }
 .row { display:flex; gap:14px; flex-wrap:wrap; } .row > div { flex:1; min-width:180px; }
 .hint { display:block; margin-top:5px; font-size:12px; color:var(--muted); font-weight:400; }
 .hint code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; background:#eef0f4; color:#475467; padding:1px 5px; border-radius:4px; }
@@ -69,17 +68,22 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .players { width:100%; border-collapse:collapse; font-size:13.5px; }
 .players th { text-align:left; font-size:11.5px; font-weight:600; color:var(--muted); text-transform:uppercase;
   letter-spacing:.03em; padding:0 6px 8px; border-bottom:1px solid var(--border); }
-.players td { padding:2px 3px; border-bottom:1px solid #eef0f3; vertical-align:top; }
+.players td { padding:2px 3px; border-bottom:1px solid #eef0f3; vertical-align:middle; }
 .players tr.dragging { opacity:.4; } .players tr.drop-target td { box-shadow:inset 0 2px 0 var(--accent); }
 .players input, .players select { padding:5px 6px; font-size:13px; border:1px solid transparent; border-radius:3px; }
-.players input:hover, .players select:hover { border-color:#e2e6ec; }
+.players input:hover:not([readonly]), .players select:hover { border-color:#e2e6ec; }
 .players input:focus, .players select:focus { border-color:var(--accent); box-shadow:none; }
 .players input.num { text-align:right; }
-.players .elo { font-size:10px; line-height:1.2; color:var(--muted); text-align:right; padding:1px 6px 0; pointer-events:none; user-select:none; }
-.players td.col-h, .players td.col-n, .players td.col-z, .players td.col-act { padding-top:8px; }
+.players input.ro { background:#f4f5f7; color:var(--muted); cursor:default; }   /* ELO – jen pro čtení */
+.ozn-chips { display:flex; gap:3px; flex-wrap:wrap; }
+.chip { font-size:11px; font-weight:600; padding:3px 6px; line-height:1; border:1px solid var(--field);
+  border-radius:4px; background:#fff; color:#475467; cursor:pointer; }
+.chip:hover { border-color:#c2c8d0; }
+.chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
 .col-h { width:30px; color:#b0b6c0; cursor:grab; text-align:center; user-select:none; font-size:16px; }
 .col-n { width:34px; color:var(--muted); text-align:center; }
-.col-rok, .col-id { width:84px; } .col-ozn { width:74px; } .col-z { width:42px; text-align:center; }
+.col-rok { width:72px; } .col-id { width:76px; } .col-elo { width:66px; }
+.col-ozn { width:128px; } .col-z { width:42px; text-align:center; }
 .col-act { width:78px; white-space:nowrap; text-align:right; }
 .icon-btn { background:none; border:none; padding:3px 5px; font-size:14px; color:var(--muted); cursor:pointer; border-radius:5px; }
 .icon-btn:hover { background:#f1f5f9; color:var(--text); } .icon-btn.del:hover { color:var(--err); }
@@ -129,7 +133,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   <div class="field row">
     <div>
       <label>Kraj</label>
-      <select id="kraj" class="xlsx-field"><option value="">— vyberte kraj —</option></select>
+      <select id="kraj"><option value="">— vyberte kraj —</option></select>
       <span class="hint" id="krajHint">Načítá se ze soutěží ŠSČR…</span>
     </div>
     <div>
@@ -149,7 +153,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     <div>
       <label>Oddíl</label>
       <div class="ac-wrap">
-        <input type="text" id="clubInput" class="xlsx-field" placeholder="Začněte psát název oddílu…" autocomplete="off">
+        <input type="text" id="clubInput" placeholder="Začněte psát název oddílu…" autocomplete="off">
         <div id="clubDrop" class="ac-drop" style="display:none"></div>
       </div>
       <span class="hint" id="clubHint"></span>
@@ -197,7 +201,9 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   <table class="players" id="playersTable" style="display:none">
     <thead><tr>
       <th class="col-h"></th><th class="col-n">#</th><th>Příjmení Jméno</th>
-      <th class="col-rok">Rok nar.</th><th class="col-id">Číslo LOK</th><th class="col-id">Číslo FIDE</th>
+      <th class="col-rok">Rok nar.</th>
+      <th class="col-id">Číslo LOK</th><th class="col-elo">ELO LOK</th>
+      <th class="col-id">Číslo FIDE</th><th class="col-elo">ELO FIDE</th>
       <th class="col-ozn">Označení</th><th class="col-z">Z?</th><th class="col-act"></th>
     </tr></thead>
     <tbody id="playersBody"></tbody>
@@ -264,7 +270,9 @@ const FIRST_PLAYER_ROW = 14;   // řádek hráče č. 1
 const LAST_TPL_ROW = 33;       // řádek hráče č. 20 (poslední předdefinovaný)
 const TPL_PLAYER_SLOTS = LAST_TPL_ROW - FIRST_PLAYER_ROW + 1;  // 20
 
-const OZN_OPTIONS = ['', 'K', 'ZK', 'H', 'V', 'C'];
+const OZN_CODES = ['K', 'ZK', 'H', 'V', 'C'];           // možná označení (multichoice s pravidly)
+const OZN_TITLES = { K:'kapitán', ZK:'zástupce kapitána', H:'hostující', V:'vedoucí', C:'cizinec' };
+const OZN_GROUPS = [['K', 'ZK'], ['H', 'V', 'C']];      // v rámci skupiny smí být max jedna hodnota
 
 /* Rate-limit & cache */
 const MIN_INTERVAL = 1100;          // min. rozestup mezi voláními API (ms) ~ 1 req/s
@@ -315,13 +323,14 @@ function memberToPlayer(m, source) {
 
 /* RosterEntry (soupiska týmu ze soutěže) → řádek soupisky. */
 function rosterToPlayer(r) {
+  const f = parseFlags(r.playerFlags);
   return {
     jmeno: String(r.playerName == null ? '' : r.playerName).trim(),
     rok:   '',
     lok:   numOrBlank(r.playerId),
     fide:  '',
-    ozn:   '',
-    z:     false,
+    ozn:   f.ozn,
+    z:     f.z,
     eloLok:  numOrBlank(r.playerCzeElo),
     eloFide: numOrBlank(r.playerFideElo),
     source: 'roster',
@@ -358,6 +367,33 @@ function addPlayerDedup(list, p) {
   }
   list.push(p);
   return true;
+}
+
+/* Přepne označení hráče podle pravidel: v rámci skupiny (K|ZK, resp. H|V|C)
+   smí být jen jedna hodnota; klik na již zvolenou ji odznačí. Vrací seřazený řetězec. */
+function toggleOzn(current, v) {
+  if (OZN_CODES.indexOf(v) === -1) return current || '';
+  let set = String(current || '').split(' ').filter(Boolean);
+  if (set.indexOf(v) !== -1) {
+    set = set.filter(function(x) { return x !== v; });                  // odznačit
+  } else {
+    const group = OZN_GROUPS.find(function(g) { return g.indexOf(v) !== -1; }) || [];
+    set = set.filter(function(x) { return group.indexOf(x) === -1; });  // vyhoď konfliktní ze skupiny
+    set.push(v);
+  }
+  set.sort(function(a, b) { return OZN_CODES.indexOf(a) - OZN_CODES.indexOf(b); });
+  return set.join(' ');
+}
+
+/* playerFlags ze soupisky týmu (např. " H Z") → { ozn, z } (Z = základní sestava). */
+function parseFlags(flags) {
+  let ozn = '', z = false;
+  String(flags == null ? '' : flags).trim().split(/\s+/).filter(Boolean).forEach(function(t) {
+    const u = t.toUpperCase();
+    if (u === 'Z') z = true;
+    else if (OZN_CODES.indexOf(u) !== -1) ozn = toggleOzn(ozn, u);
+  });
+  return { ozn: ozn, z: z };
 }
 
 /* Šablona názvu souboru → bezpečný název s příponou .xlsx. */
@@ -834,11 +870,6 @@ function pickDbPlayer(m) {
   setMsg(ok ? 'Hráč přidán.' : 'Hráč už na soupisce je.', ok ? 'ok' : 'warn');
 }
 
-/* Malý needitovatelný řádek s ELO pod buňkou LOK/FIDE. */
-function eloLine(v) {
-  return (v === '' || v == null) ? '<div class="elo">&nbsp;</div>' : '<div class="elo">ELO ' + esc(v) + '</div>';
-}
-
 /* ── Tabulka hráčů: render + editace + pořadí ────────────────────── */
 function renderPlayers() {
   const body = $('playersBody');
@@ -847,17 +878,22 @@ function renderPlayers() {
   $('playersEmpty').style.display = has ? 'none' : 'block';
   if (!has) { body.innerHTML = ''; return; }
   body.innerHTML = state.players.map(function(p, i) {
-    const opts = OZN_OPTIONS.map(function(o) {
-      return '<option value="' + o + '"' + (o === p.ozn ? ' selected' : '') + '>' + (o || '—') + '</option>';
+    const sel = String(p.ozn || '').split(' ').filter(Boolean);
+    const chips = OZN_CODES.map(function(code) {
+      const on = sel.indexOf(code) !== -1;
+      return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-ozn="' + code + '" '
+        + 'title="' + esc(OZN_TITLES[code]) + '">' + code + '</button>';
     }).join('');
     return '<tr draggable="true" data-i="' + i + '">'
       + '<td class="col-h" title="Přetažením změňte pořadí">⠿</td>'
       + '<td class="col-n">' + (i + 1) + '.</td>'
       + '<td><input data-f="jmeno" value="' + esc(p.jmeno) + '" placeholder="Příjmení Jméno"></td>'
       + '<td><input data-f="rok" class="num" value="' + esc(p.rok) + '" inputmode="numeric"></td>'
-      + '<td><input data-f="lok" class="num" value="' + esc(p.lok) + '" inputmode="numeric">' + eloLine(p.eloLok) + '</td>'
-      + '<td><input data-f="fide" class="num" value="' + esc(p.fide) + '" inputmode="numeric">' + eloLine(p.eloFide) + '</td>'
-      + '<td><select data-f="ozn">' + opts + '</select></td>'
+      + '<td><input data-f="lok" class="num" value="' + esc(p.lok) + '" inputmode="numeric"></td>'
+      + '<td><input class="num ro" value="' + esc(p.eloLok) + '" readonly tabindex="-1"></td>'
+      + '<td><input data-f="fide" class="num" value="' + esc(p.fide) + '" inputmode="numeric"></td>'
+      + '<td><input class="num ro" value="' + esc(p.eloFide) + '" readonly tabindex="-1"></td>'
+      + '<td class="col-ozn"><div class="ozn-chips">' + chips + '</div></td>'
       + '<td class="col-z"><input type="checkbox" data-f="z"' + (p.z ? ' checked' : '') + '></td>'
       + '<td class="col-act">'
         + '<button class="icon-btn" data-act="up" title="Nahoru">▲</button>'
@@ -885,6 +921,13 @@ function wirePlayerRows() {
       if (act === 'del') state.players.splice(i, 1);
       else if (act === 'up' && i > 0) swap(i, i - 1);
       else if (act === 'down' && i < state.players.length - 1) swap(i, i + 1);
+      renderPlayers();
+    });
+  });
+  [].forEach.call(body.querySelectorAll('.chip'), function(btn) {
+    btn.addEventListener('click', function() {
+      const i = +btn.closest('tr').dataset.i;
+      state.players[i].ozn = toggleOzn(state.players[i].ozn, btn.dataset.ozn);
       renderPlayers();
     });
   });
