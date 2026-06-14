@@ -56,15 +56,15 @@ test('numOrBlank — kladné číslo, jinak prázdno (0/null/NaN)', () => {
 });
 
 test('memberToPlayer — mapování členů oddílu', () => {
-  const p = memberToPlayer({ fullName: 'Antoš Bořivoj ', birthYear: 1962, czeId: 708, fideId: 327298 }, 'club');
-  assert.deepEqual(plain(p), { jmeno: 'Antoš Bořivoj', rok: 1962, lok: 708, fide: 327298, ozn: '', z: false, source: 'club' });
+  const p = memberToPlayer({ fullName: 'Antoš Bořivoj ', birthYear: 1962, czeId: 708, fideId: 327298, czeStdElo: 2028, fideStdElo: 2058 }, 'club');
+  assert.deepEqual(plain(p), { jmeno: 'Antoš Bořivoj', rok: 1962, lok: 708, fide: 327298, ozn: '', z: false, eloLok: 2028, eloFide: 2058, source: 'club' });
   const p2 = memberToPlayer({ fullName: 'X Y', birthYear: null, czeId: 5, fideId: 0 }, 'db');
   assert.equal(p2.rok, ''); assert.equal(p2.fide, ''); assert.equal(p2.lok, 5);
 });
 
 test('rosterToPlayer — playerId → LOK, rok/FIDE prázdné', () => {
-  const p = rosterToPlayer({ rosterPosition: 1, playerId: 708, playerName: 'Novák Radomír' });
-  assert.deepEqual(plain(p), { jmeno: 'Novák Radomír', rok: '', lok: 708, fide: '', ozn: '', z: false, source: 'roster' });
+  const p = rosterToPlayer({ rosterPosition: 1, playerId: 708, playerName: 'Novák Radomír', playerCzeElo: 2028, playerFideElo: 2058 });
+  assert.deepEqual(plain(p), { jmeno: 'Novák Radomír', rok: '', lok: 708, fide: '', ozn: '', z: false, eloLok: 2028, eloFide: 2058, source: 'roster' });
 });
 
 test('parseCompetitions — regiony seřazené, soutěže dle úrovně', () => {
@@ -88,10 +88,10 @@ test('addPlayerDedup — duplicitní LOK se nepřidá, prázdný LOK vždy', () 
   assert.equal(list.length, 3);
 });
 
-test('resolveFname — placeholdery, diakritika, sanitizace, přípona', () => {
-  assert.equal(resolveFname('soupiska_[druzstvo]', { druzstvo: 'TJ Jawa A' }), 'soupiska_TJ_Jawa_A.xlsx');
+test('resolveFname — placeholdery, diakritika, sanitizace, přípona, první písmeno velké', () => {
+  assert.equal(resolveFname('soupiska_[druzstvo]', { druzstvo: 'TJ Jawa A' }), 'Soupiska_TJ_Jawa_A.xlsx');
   assert.equal(resolveFname('[oddil]', { oddil: 'Nový Bor' }), 'Novy_Bor.xlsx');
-  assert.equal(resolveFname('a/b:c', {}), 'a_b_c.xlsx');
-  assert.equal(resolveFname('', {}), 'soupiska.xlsx');
-  assert.equal(resolveFname('hotovo.xlsx', {}), 'hotovo.xlsx'); // přípona se nepřidá 2×
+  assert.equal(resolveFname('a/b:c', {}), 'A_b_c.xlsx');
+  assert.equal(resolveFname('', {}), 'Soupiska.xlsx');
+  assert.equal(resolveFname('hotovo.xlsx', {}), 'Hotovo.xlsx'); // přípona se nepřidá 2×
 });

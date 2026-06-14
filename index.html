@@ -34,6 +34,11 @@ input, select, textarea {
 input::placeholder { color:#98a2b3; }
 input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
 .field { margin-top:16px; } .field:first-child { margin-top:0; }
+.card-sub { margin:-8px 0 16px; font-size:13px; color:var(--muted); }
+/* Pole, jejichž hodnota se propisuje do xlsx — jemně žlutě. */
+.xlsx-field, .players td input:not([type=checkbox]), .players td select { background:#fff8e1; }
+.players td.col-z { background:#fff8e1; }
+.xlsx-field:focus, .players td input:focus, .players td select:focus { background:#fff; }
 .row { display:flex; gap:14px; flex-wrap:wrap; } .row > div { flex:1; min-width:180px; }
 .hint { display:block; margin-top:5px; font-size:12px; color:var(--muted); font-weight:400; }
 .hint code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; background:#eef0f4; color:#475467; padding:1px 5px; border-radius:4px; }
@@ -64,10 +69,14 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .players { width:100%; border-collapse:collapse; font-size:13.5px; }
 .players th { text-align:left; font-size:11.5px; font-weight:600; color:var(--muted); text-transform:uppercase;
   letter-spacing:.03em; padding:0 6px 8px; border-bottom:1px solid var(--border); }
-.players td { padding:4px 6px; border-bottom:1px solid #f0f1f4; vertical-align:middle; }
+.players td { padding:2px 3px; border-bottom:1px solid #eef0f3; vertical-align:top; }
 .players tr.dragging { opacity:.4; } .players tr.drop-target td { box-shadow:inset 0 2px 0 var(--accent); }
-.players input, .players select { padding:6px 8px; font-size:13px; }
+.players input, .players select { padding:5px 6px; font-size:13px; border:1px solid transparent; border-radius:3px; }
+.players input:hover, .players select:hover { border-color:#e2e6ec; }
+.players input:focus, .players select:focus { border-color:var(--accent); box-shadow:none; }
 .players input.num { text-align:right; }
+.players .elo { font-size:10px; line-height:1.2; color:var(--muted); text-align:right; padding:1px 6px 0; pointer-events:none; user-select:none; }
+.players td.col-h, .players td.col-n, .players td.col-z, .players td.col-act { padding-top:8px; }
 .col-h { width:30px; color:#b0b6c0; cursor:grab; text-align:center; user-select:none; font-size:16px; }
 .col-n { width:34px; color:var(--muted); text-align:center; }
 .col-rok, .col-id { width:84px; } .col-ozn { width:74px; } .col-z { width:42px; text-align:center; }
@@ -115,11 +124,12 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 <!-- ── 1. Hlavička ────────────────────────────────────────── -->
 <div class="card">
   <h2><span class="step">1</span>Hlavička soupisky</h2>
+  <p class="card-sub">Načtěte si hodnoty z minulých ročníků a upravte.</p>
 
   <div class="field row">
     <div>
       <label>Kraj</label>
-      <select id="kraj"><option value="">— vyberte kraj —</option></select>
+      <select id="kraj" class="xlsx-field"><option value="">— vyberte kraj —</option></select>
       <span class="hint" id="krajHint">Načítá se ze soutěží ŠSČR…</span>
     </div>
     <div>
@@ -131,7 +141,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   <div class="field">
     <label>Soutěž</label>
     <select id="soutezSel"><option value="">— nejprve vyberte kraj —</option></select>
-    <input type="text" id="soutezText" placeholder="Název soutěže do soupisky" style="margin-top:8px">
+    <input type="text" id="soutezText" class="xlsx-field" placeholder="Název soutěže do soupisky" style="margin-top:8px">
     <span class="hint">Výběr nahoře předvyplní název i tým k načtení. Text dole je to, co se zapíše do soupisky (lze upravit).</span>
   </div>
 
@@ -139,31 +149,45 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     <div>
       <label>Oddíl</label>
       <div class="ac-wrap">
-        <input type="text" id="clubInput" placeholder="Začněte psát název oddílu…" autocomplete="off">
+        <input type="text" id="clubInput" class="xlsx-field" placeholder="Začněte psát název oddílu…" autocomplete="off">
         <div id="clubDrop" class="ac-drop" style="display:none"></div>
       </div>
       <span class="hint" id="clubHint"></span>
     </div>
     <div>
       <label>Název družstva</label>
-      <input type="text" id="druzstvo" placeholder="např. TJ Jawa Brodce A">
+      <input type="text" id="druzstvo" class="xlsx-field" placeholder="např. TJ Jawa Brodce A">
     </div>
   </div>
 </div>
 
 <!-- ── 2. Předvyplnění ze soutěže ─────────────────────────── -->
 <div class="card">
-  <h2><span class="step">2</span>Předvyplnit z existující soutěže <span style="font-weight:400;color:var(--muted);font-size:12px">(volitelné)</span></h2>
+  <h2><span class="step">2</span>Předvyplňte soupisku z minulých soutěží a upravte <span style="font-weight:400;color:var(--muted);font-size:12px">(volitelné)</span></h2>
   <div class="field row">
     <div>
-      <label>Tým ve vybrané soutěži</label>
-      <select id="teamSel" disabled><option value="">— nejprve vyberte soutěž v kroku 1 —</option></select>
+      <label>Sezóna</label>
+      <select id="roSeason"></select>
+    </div>
+    <div>
+      <label>Kraj / svaz</label>
+      <select id="roKraj"><option value="">— vyberte kraj —</option></select>
+    </div>
+  </div>
+  <div class="field">
+    <label>Soutěž</label>
+    <select id="roSoutez" disabled><option value="">— nejprve vyberte kraj —</option></select>
+  </div>
+  <div class="field row">
+    <div>
+      <label>Tým</label>
+      <select id="teamSel" disabled><option value="">— nejprve vyberte soutěž —</option></select>
     </div>
     <div style="flex:0 0 auto; display:flex; align-items:flex-end">
       <button id="btnLoadRoster" class="btn-secondary" disabled>Načíst soupisku týmu</button>
     </div>
   </div>
-  <span class="hint">Načte loňskou soupisku týmu a předvyplní hráče níže (rok narození a č. FIDE doplní z členů oddílu, pokud je oddíl vybrán).</span>
+  <span class="hint">Vymaže aktuální soupisku a vloží hráče z vybraného týmu. U každého hráče se z databáze doplní rok narození a č. FIDE — načítání může chvíli trvat.</span>
 </div>
 
 <!-- ── 3. Hráči ───────────────────────────────────────────── -->
@@ -181,7 +205,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   <div id="playersEmpty" class="players-empty">Zatím žádní hráči. Přidejte je níže (z oddílu, z databáze ŠSČR, nebo ručně).</div>
 
   <div class="actions">
-    <button class="btn-secondary btn-sm" id="btnAddManual">+ Prázdný řádek</button>
+    <button class="btn-secondary btn-sm" id="btnAddManual">Přidat hráče ručně</button>
     <span class="hint" style="margin:0">Označení: K = kapitán, ZK = zástupce, H = hostující, V = vedoucí, C = cizinec · Z = základní sestava</span>
   </div>
 
@@ -283,6 +307,8 @@ function memberToPlayer(m, source) {
     fide:  numOrBlank(m.fideId),
     ozn:   '',
     z:     false,
+    eloLok:  numOrBlank(m.czeStdElo),   // ELO ČŠS (jen pro zobrazení)
+    eloFide: numOrBlank(m.fideStdElo),  // ELO FIDE (jen pro zobrazení)
     source: source || 'club',
   };
 }
@@ -296,12 +322,14 @@ function rosterToPlayer(r) {
     fide:  '',
     ozn:   '',
     z:     false,
+    eloLok:  numOrBlank(r.playerCzeElo),
+    eloFide: numOrBlank(r.playerFideElo),
     source: 'roster',
   };
 }
 
 function emptyPlayer() {
-  return { jmeno:'', rok:'', lok:'', fide:'', ozn:'', z:false, source:'manual' };
+  return { jmeno:'', rok:'', lok:'', fide:'', ozn:'', z:false, eloLok:'', eloFide:'', source:'manual' };
 }
 
 /* /competitions → seřazené pole regionů s jejich soutěžemi. */
@@ -340,9 +368,10 @@ function resolveFname(tpl, ctx) {
        .replace(/\[druzstvo\]/gi, ctx.druzstvo || '')
        .replace(/\[soutez\]/gi, ctx.soutez || '');
   f = stripDiacritics(f).replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  f = f.replace(/\.xlsx$/i, '');                         // odděl příponu
   if (!f) f = 'soupiska';
-  if (!/\.xlsx$/i.test(f)) f += '.xlsx';
-  return f;
+  f = f.charAt(0).toUpperCase() + f.slice(1);            // jen první písmeno velké, zbytek beze změny
+  return f + '.xlsx';
 }
 
 /* ── Generování xlsx (čisté nad ExcelJS worksheetem; testovatelné v Node) ── */
@@ -440,13 +469,13 @@ function apiGet(path, label, opts) {
 
 /* ── Stav aplikace ───────────────────────────────────────────────── */
 const state = {
-  regions: [],          // parseCompetitions výstup
+  regions: [],          // parseCompetitions výstup (krok 1 – hlavička)
+  roRegions: [],        // parseCompetitions výstup (krok 2 – předvyplnění)
   clubs: [],            // {clubCode, clubName}
   selectedClubCode: '', // clubCode (string) zvoleného oddílu
   members: [],          // členové zvoleného oddílu
   players: [],          // řádky soupisky
   compTeams: [],        // týmy vybrané soutěže [{teamId, teamName}]
-  selectedCompId: '',
 };
 
 function $(id) { return document.getElementById(id); }
@@ -477,13 +506,18 @@ function initSeasonSelect() {
   sel.value = String(cur); // poslední odehraná sezóna
 }
 
-/* ── Načtení soutěží daného roku → kraj/soutěž ───────────────────── */
+/* ── Načtení soutěží daného roku (sdílené krokem 1 i 2) ───────────── */
+async function fetchRegions(year) {
+  const json = await apiGet('/competitions/' + year, 'soutěže ' + year, { quiet: true });
+  return parseCompetitions(json);
+}
+
+/* ── Krok 1: soutěže do hlavičky → kraj/soutěž ───────────────────── */
 async function loadCompetitions() {
   const year = $('season').value;
   $('krajHint').textContent = 'Načítám soutěže ' + year + '…';
   try {
-    const json = await apiGet('/competitions/' + year, 'soutěže ' + year, { quiet: true });
-    state.regions = parseCompetitions(json);
+    state.regions = await fetchRegions(year);
     const sel = $('kraj');
     const prev = sel.value;
     sel.innerHTML = '<option value="">— vyberte kraj —</option>';
@@ -524,22 +558,75 @@ function onKrajChange() {
 let _krajHeader = '';
 function setKrajHeader(v) { _krajHeader = v; }
 
-async function onSoutezChange() {
+function onSoutezChange() {
   const compId = $('soutezSel').value;
-  state.selectedCompId = compId;
   const reg = state.regions.find(function(r) { return r.key === $('kraj').value; });
   const comp = reg && reg.competitions.find(function(c) { return String(c.compId) === compId; });
   if (comp && !_soutezTextEdited) $('soutezText').value = comp.compName;
   updateFnamePreview();
-  // načti týmy soutěže pro krok 2
-  const teamSel = $('teamSel');
-  state.compTeams = [];
-  if (!compId) {
-    teamSel.innerHTML = '<option value="">— nejprve vyberte soutěž v kroku 1 —</option>';
-    teamSel.disabled = true; $('btnLoadRoster').disabled = true;
-    return;
+}
+
+/* ── Krok 2: nezávislý výběr sezóny / kraje / soutěže pro tým ─────── */
+function initRosterSeason() {
+  const sel = $('roSeason');
+  const cur = currentSeasonStart();
+  for (let y = cur; y >= cur - 3; y--) {
+    const o = document.createElement('option');
+    o.value = String(y);
+    o.textContent = y + '/' + (y + 1);
+    sel.appendChild(o);
   }
-  teamSel.innerHTML = '<option value="">načítám týmy…</option>'; teamSel.disabled = true;
+  sel.value = String(cur);
+}
+
+function resetTeamSel() {
+  const teamSel = $('teamSel');
+  teamSel.innerHTML = '<option value="">— nejprve vyberte soutěž —</option>';
+  teamSel.disabled = true;
+  $('btnLoadRoster').disabled = true;
+}
+
+async function onRoSeasonChange() {
+  const year = $('roSeason').value;
+  const sel = $('roKraj');
+  sel.innerHTML = '<option value="">načítám…</option>'; sel.disabled = true;
+  resetTeamSel();
+  $('roSoutez').innerHTML = '<option value="">— nejprve vyberte kraj —</option>'; $('roSoutez').disabled = true;
+  try {
+    state.roRegions = await fetchRegions(year);
+    sel.innerHTML = '<option value="">— vyberte kraj —</option>';
+    state.roRegions.forEach(function(reg) {
+      const o = document.createElement('option');
+      o.value = reg.key; o.textContent = reg.regionName; sel.appendChild(o);
+    });
+    sel.disabled = false;
+  } catch (e) {
+    sel.innerHTML = '<option value="">nepodařilo se načíst</option>';
+    setMsg('Soutěže ' + year + ': ' + e.message, 'err');
+  }
+}
+
+function onRoKrajChange() {
+  const reg = (state.roRegions || []).find(function(r) { return r.key === $('roKraj').value; });
+  const sel = $('roSoutez');
+  resetTeamSel();
+  if (!reg) {
+    sel.innerHTML = '<option value="">— nejprve vyberte kraj —</option>'; sel.disabled = true; return;
+  }
+  sel.innerHTML = '<option value="">— vyberte soutěž —</option>';
+  reg.competitions.forEach(function(c) {
+    const o = document.createElement('option');
+    o.value = String(c.compId); o.textContent = c.compName; sel.appendChild(o);
+  });
+  sel.disabled = false;
+}
+
+async function onRoSoutezChange() {
+  const compId = $('roSoutez').value;
+  resetTeamSel();
+  if (!compId) return;
+  const teamSel = $('teamSel');
+  teamSel.innerHTML = '<option value="">načítám týmy…</option>';
   try {
     const table = await apiGet('/competitions/' + compId + '/table', 'tabulka soutěže', { quiet: true });
     state.compTeams = normArr(table).map(function(t) { return { teamId: t.teamId, teamName: t.teamName }; })
@@ -547,39 +634,60 @@ async function onSoutezChange() {
     teamSel.innerHTML = '<option value="">— vyberte tým —</option>';
     state.compTeams.forEach(function(t) {
       const o = document.createElement('option');
-      o.value = String(t.teamId);
-      o.textContent = t.teamName;
-      teamSel.appendChild(o);
+      o.value = String(t.teamId); o.textContent = t.teamName; teamSel.appendChild(o);
     });
     teamSel.disabled = false;
-    $('btnLoadRoster').disabled = state.compTeams.length === 0;
   } catch (e) {
     teamSel.innerHTML = '<option value="">týmy se nepodařilo načíst</option>';
     setMsg('Týmy soutěže: ' + e.message, 'err');
   }
 }
 
-/* ── Předvyplnění hráčů ze soupisky týmu ─────────────────────────── */
+/* Detail hráče z DB pro doplnění roku narození a č. FIDE (dle LOK, jinak FIDE). */
+async function fetchMemberDetail(lok, fide) {
+  try {
+    if (lok !== '' && lok != null) {
+      const d = await apiGet('/members/' + lok + '/cze', 'hráč LOK ' + lok, { quiet: true });
+      return Array.isArray(d) ? d[0] : d;
+    }
+    if (fide !== '' && fide != null) {
+      const d = await apiGet('/members/' + fide + '/fide', 'hráč FIDE ' + fide, { quiet: true });
+      return Array.isArray(d) ? d[0] : d;
+    }
+  } catch (e) { /* hráč v DB nenalezen — necháme prázdné */ }
+  return null;
+}
+
+/* ── Předvyplnění hráčů ze soupisky týmu (vymaže stávající + doplní z DB) ── */
 async function loadRoster() {
-  const compId = state.selectedCompId, teamId = $('teamSel').value;
+  const compId = $('roSoutez').value, teamId = $('teamSel').value;
   if (!compId || !teamId) return;
   $('btnLoadRoster').disabled = true;
   try {
-    const data = await apiGet('/competitions/' + compId + '/team/' + teamId + '/roster', 'soupiska týmu');
-    const entries = normArr(data);
-    // index členů oddílu podle czeId pro doplnění roku/FIDE
-    const byLok = {};
-    state.members.forEach(function(m) { if (m.czeId) byLok[String(m.czeId)] = m; });
-    let added = 0;
-    entries.sort(function(a, b) { return (a.rosterPosition || 0) - (b.rosterPosition || 0); })
-      .forEach(function(en) {
-        const p = rosterToPlayer(en);
-        const m = byLok[String(p.lok)];
-        if (m) { p.rok = numOrBlank(m.birthYear); p.fide = numOrBlank(m.fideId); }
-        if (addPlayerDedup(state.players, p)) added++;
-      });
+    setMsg('<span class="spinner"></span>Načítám soupisku týmu…');
+    const data = await apiGet('/competitions/' + compId + '/team/' + teamId + '/roster', 'soupiska týmu', { quiet: true });
+    const entries = normArr(data).slice().sort(function(a, b) {
+      return (a.rosterPosition || 0) - (b.rosterPosition || 0);
+    });
+    state.players = [];           // vymaž aktuální soupisku, pak vlož načtenou
     renderPlayers();
-    setMsg('Předvyplněno ' + added + ' hráčů ze soupisky týmu.', 'ok');
+    const total = entries.length;
+    for (let i = 0; i < entries.length; i++) {
+      const p = rosterToPlayer(entries[i]);
+      setMsg('<span class="spinner"></span>Doplňuji údaje hráčů ' + (i + 1) + '/' + total
+        + (p.jmeno ? ' — ' + esc(p.jmeno) : '') + '…');
+      const m = await fetchMemberDetail(p.lok, p.fide);
+      if (m) {
+        p.rok = numOrBlank(m.birthYear);
+        if (p.fide === '') p.fide = numOrBlank(m.fideId);
+        if (!p.jmeno) p.jmeno = String(m.fullName == null ? '' : m.fullName).trim();
+        if (numOrBlank(m.czeStdElo) !== '')  p.eloLok = numOrBlank(m.czeStdElo);
+        if (numOrBlank(m.fideStdElo) !== '') p.eloFide = numOrBlank(m.fideStdElo);
+      }
+      addPlayerDedup(state.players, p);
+      renderPlayers();
+    }
+    setMsg('✓ Načteno ' + state.players.length + ' hráčů ze soupisky týmu.', 'ok');
   } catch (e) {
     setMsg('Soupiska týmu: ' + e.message, 'err');
   } finally {
@@ -646,11 +754,18 @@ async function pickClub(club) {
   }
 }
 
+/* Je hráč (dle č. LOK) už na soupisce? */
+function isInRoster(lok) {
+  if (lok === '' || lok == null) return false;
+  return state.players.some(function(p) { return p.lok !== '' && String(p.lok) === String(lok); });
+}
+
 /* ── Panel: přidat z oddílu (checkboxy + filtr aktivní) ──────────── */
 function visibleMembers() {
   const onlyActive = $('onlyActive').checked;
   const q = $('memberFilter').value;
   return state.members.filter(function(m) {
+    if (isInRoster(m.czeId)) return false;          // skryj už přidané
     if (onlyActive && !isActiveMember(m)) return false;
     if (q && !matchName(m.fullName, q)) return false;
     return true;
@@ -695,8 +810,8 @@ async function runDbSearch(q) {
   drop.style.display = 'block';
   try {
     const data = await apiGet('/members/name?search=' + encodeURIComponent(q), 'hledání hráče', { quiet: true });
-    _dbMatches = normArr(data); _dbHl = -1;
-    if (!_dbMatches.length) { drop.innerHTML = '<div class="ac-empty">Nic nenalezeno.</div>'; return; }
+    _dbMatches = normArr(data).filter(function(m) { return !isInRoster(m.czeId); }); _dbHl = -1;
+    if (!_dbMatches.length) { drop.innerHTML = '<div class="ac-empty">Nic nenalezeno (nebo už na soupisce).</div>'; return; }
     drop.innerHTML = _dbMatches.map(function(m, i) {
       const meta = [m.birthYear, m.clubName, m.czeId ? 'LOK ' + m.czeId : ''].filter(Boolean).join(' · ');
       return '<button type="button" class="ac-item" data-i="' + i + '">'
@@ -719,6 +834,11 @@ function pickDbPlayer(m) {
   setMsg(ok ? 'Hráč přidán.' : 'Hráč už na soupisce je.', ok ? 'ok' : 'warn');
 }
 
+/* Malý needitovatelný řádek s ELO pod buňkou LOK/FIDE. */
+function eloLine(v) {
+  return (v === '' || v == null) ? '<div class="elo">&nbsp;</div>' : '<div class="elo">ELO ' + esc(v) + '</div>';
+}
+
 /* ── Tabulka hráčů: render + editace + pořadí ────────────────────── */
 function renderPlayers() {
   const body = $('playersBody');
@@ -735,8 +855,8 @@ function renderPlayers() {
       + '<td class="col-n">' + (i + 1) + '.</td>'
       + '<td><input data-f="jmeno" value="' + esc(p.jmeno) + '" placeholder="Příjmení Jméno"></td>'
       + '<td><input data-f="rok" class="num" value="' + esc(p.rok) + '" inputmode="numeric"></td>'
-      + '<td><input data-f="lok" class="num" value="' + esc(p.lok) + '" inputmode="numeric"></td>'
-      + '<td><input data-f="fide" class="num" value="' + esc(p.fide) + '" inputmode="numeric"></td>'
+      + '<td><input data-f="lok" class="num" value="' + esc(p.lok) + '" inputmode="numeric">' + eloLine(p.eloLok) + '</td>'
+      + '<td><input data-f="fide" class="num" value="' + esc(p.fide) + '" inputmode="numeric">' + eloLine(p.eloFide) + '</td>'
       + '<td><select data-f="ozn">' + opts + '</select></td>'
       + '<td class="col-z"><input type="checkbox" data-f="z"' + (p.z ? ' checked' : '') + '></td>'
       + '<td class="col-act">'
@@ -746,6 +866,8 @@ function renderPlayers() {
       + '</td></tr>';
   }).join('');
   wirePlayerRows();
+  // obnov panel „přidat z oddílu", aby zmizeli hráči už na soupisce
+  if ($('clubPanel') && $('clubPanel').style.display !== 'none') renderMemberChecks();
 }
 function wirePlayerRows() {
   const body = $('playersBody');
@@ -884,6 +1006,10 @@ function init() {
   $('kraj').addEventListener('change', onKrajChange);
   $('soutezSel').addEventListener('change', onSoutezChange);
   $('soutezText').addEventListener('input', function(){ _soutezTextEdited = true; updateFnamePreview(); });
+  initRosterSeason();
+  $('roSeason').addEventListener('change', onRoSeasonChange);
+  $('roKraj').addEventListener('change', onRoKrajChange);
+  $('roSoutez').addEventListener('change', onRoSoutezChange);
   $('btnLoadRoster').addEventListener('click', loadRoster);
   $('teamSel').addEventListener('change', function(){ $('btnLoadRoster').disabled = !$('teamSel').value; });
 
@@ -907,6 +1033,7 @@ function init() {
   renderHistory();
   updateFnamePreview();
   loadCompetitions();
+  onRoSeasonChange();
   ensureClubs();
 }
 

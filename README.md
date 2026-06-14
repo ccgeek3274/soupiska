@@ -9,9 +9,11 @@ berou z veřejného API `https://api.chess.cz/api`.
 
 1. **Hlavička** — výběr *kraje* a *soutěže* z API (`/competitions/{rok}`), našeptávač
    *oddílu* z `/clubs/all`, název družstva.
-2. **Předvyplnění z existující soutěže** — vybereš tým ve zvolené soutěži a
-   aplikace načte jeho loňskou soupisku (`/competitions/{compId}/team/{teamId}/roster`)
-   a předvyplní hráče (rok narození a č. FIDE doplní z členů oddílu).
+2. **Předvyplnění z existující soutěže** — nezávisle vybereš *sezónu, kraj,
+   soutěž a tým*; tlačítko **vymaže aktuální soupisku** a vloží načtenou
+   (`/competitions/{compId}/team/{teamId}/roster`). U každého hráče se z databáze
+   (`/members/{lokId}/cze`, příp. `/members/{fideId}/fide`) doplní rok narození
+   a č. FIDE — proto se při načítání zobrazuje průběh a chvíli to trvá.
 3. **Hráči** — tabulka odpovídající šabloně (Příjmení Jméno · Rok · Číslo LOK ·
    Číslo FIDE · Označení K/ZK/H/V/C · Z?). Hráče lze přidat třemi způsoby:
    - **z oddílu** (`/clubs/{clubCode}/members`) s přepínačem *jen aktivní hráči*,
