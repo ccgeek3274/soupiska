@@ -15,7 +15,7 @@
 * { box-sizing:border-box; }
 body {
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  max-width:920px; margin:0 auto; padding:40px 20px 100px;
+  max-width:1100px; margin:0 auto; padding:40px 20px 100px;
   color:var(--text); background:var(--bg); line-height:1.5; -webkit-font-smoothing:antialiased;
 }
 .page-title { margin:0 0 4px; font-size:24px; font-weight:650; letter-spacing:-.01em; }
@@ -71,11 +71,13 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .players td { padding:2px 3px; border-bottom:1px solid #eef0f3; vertical-align:middle; }
 .players tr.dragging { opacity:.4; } .players tr.drop-target td { box-shadow:inset 0 2px 0 var(--accent); }
 .players input, .players select { padding:5px 6px; font-size:13px; border:1px solid transparent; border-radius:3px; }
-.players input:hover:not([readonly]), .players select:hover { border-color:#e2e6ec; }
-.players input:focus, .players select:focus { border-color:var(--accent); box-shadow:none; }
+.players input:not(.ro), .players select { background:#f4f5f7; }                    /* editovatelná pole – podbarvená */
+.players input:not(.ro):hover, .players select:hover { border-color:#e2e6ec; }
+.players input:not(.ro):focus, .players select:focus { border-color:var(--accent); box-shadow:none; background:#fff; }
 .players input.num { text-align:right; }
-.players input.ro { background:#f4f5f7; color:var(--muted); cursor:default; }   /* ELO – jen pro čtení */
-.ozn-chips { display:flex; gap:3px; flex-wrap:wrap; }
+.players input.ro { background:transparent; color:var(--muted); cursor:default; }   /* ELO – jen pro čtení, bez podbarvení */
+.ozn-chips { display:flex; flex-direction:column; gap:3px; }
+.ozn-row { display:flex; gap:3px; }
 .chip { font-size:11px; font-weight:600; padding:3px 6px; line-height:1; border:1px solid var(--field);
   border-radius:4px; background:#fff; color:#475467; cursor:pointer; }
 .chip:hover { border-color:#c2c8d0; }
@@ -83,7 +85,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .col-h { width:30px; color:#b0b6c0; cursor:grab; text-align:center; user-select:none; font-size:16px; }
 .col-n { width:34px; color:var(--muted); text-align:center; }
 .col-rok { width:72px; } .col-id { width:76px; } .col-elo { width:66px; }
-.col-ozn { width:128px; } .col-z { width:42px; text-align:center; }
+.col-ozn { width:92px; } .col-z { width:42px; text-align:center; }
 .col-act { width:78px; white-space:nowrap; text-align:right; }
 .icon-btn { background:none; border:none; padding:3px 5px; font-size:14px; color:var(--muted); cursor:pointer; border-radius:5px; }
 .icon-btn:hover { background:#f1f5f9; color:var(--text); } .icon-btn.del:hover { color:var(--err); }
@@ -132,36 +134,24 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 
   <div class="field row">
     <div>
+      <label>Sezóna</label>
+      <select id="season"></select>
+    </div>
+    <div>
       <label>Kraj</label>
-      <select id="kraj"><option value="">— vyberte kraj —</option></select>
+      <select id="kraj" class="xlsx-field"><option value="">— vyberte kraj —</option></select>
       <span class="hint" id="krajHint">Načítá se ze soutěží ŠSČR…</span>
     </div>
     <div>
-      <label>Sezóna soutěží (pro výběr/předvyplnění)</label>
-      <select id="season"></select>
+      <label>Soutěž</label>
+      <select id="soutezSel"><option value="">— nejprve vyberte kraj —</option></select>
     </div>
   </div>
 
   <div class="field">
-    <label>Soutěž</label>
-    <select id="soutezSel"><option value="">— nejprve vyberte kraj —</option></select>
-    <input type="text" id="soutezText" class="xlsx-field" placeholder="Název soutěže do soupisky" style="margin-top:8px">
-    <span class="hint">Výběr nahoře předvyplní název i tým k načtení. Text dole je to, co se zapíše do soupisky (lze upravit).</span>
-  </div>
-
-  <div class="field row">
-    <div>
-      <label>Oddíl</label>
-      <div class="ac-wrap">
-        <input type="text" id="clubInput" placeholder="Začněte psát název oddílu…" autocomplete="off">
-        <div id="clubDrop" class="ac-drop" style="display:none"></div>
-      </div>
-      <span class="hint" id="clubHint"></span>
-    </div>
-    <div>
-      <label>Název družstva</label>
-      <input type="text" id="druzstvo" class="xlsx-field" placeholder="např. TJ Jawa Brodce A">
-    </div>
+    <label>Název soutěže do soupisky</label>
+    <input type="text" id="soutezText" class="xlsx-field" placeholder="Název soutěže do soupisky">
+    <span class="hint">Text, který se zapíše do soupisky (lze upravit). Výběr výše ho i hlavičku kroku 2 předvyplní.</span>
   </div>
 </div>
 
@@ -174,13 +164,13 @@ button:disabled { opacity:.5; cursor:not-allowed; }
       <select id="roSeason"></select>
     </div>
     <div>
-      <label>Kraj / svaz</label>
+      <label>Kraj</label>
       <select id="roKraj"><option value="">— vyberte kraj —</option></select>
     </div>
-  </div>
-  <div class="field">
-    <label>Soutěž</label>
-    <select id="roSoutez" disabled><option value="">— nejprve vyberte kraj —</option></select>
+    <div>
+      <label>Soutěž</label>
+      <select id="roSoutez" disabled><option value="">— nejprve vyberte kraj —</option></select>
+    </div>
   </div>
   <div class="field row">
     <div>
@@ -191,7 +181,11 @@ button:disabled { opacity:.5; cursor:not-allowed; }
       <button id="btnLoadRoster" class="btn-secondary" disabled>Načíst soupisku týmu</button>
     </div>
   </div>
-  <span class="hint">Vymaže aktuální soupisku a vloží hráče z vybraného týmu. U každého hráče se z databáze doplní rok narození a č. FIDE — načítání může chvíli trvat.</span>
+  <div class="field">
+    <label>Název družstva</label>
+    <input type="text" id="druzstvo" class="xlsx-field" placeholder="např. TJ Jawa Brodce A">
+  </div>
+  <span class="hint">Vymaže aktuální soupisku a vloží hráče z vybraného týmu. U každého hráče se z databáze doplní rok narození a č. FIDE — načítání může chvíli trvat. Oddíl se předvybere v kroku 3 podle prvního domácího hráče.</span>
 </div>
 
 <!-- ── 3. Hráči ───────────────────────────────────────────── -->
@@ -216,14 +210,24 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   </div>
 
   <!-- Přidat z oddílu -->
-  <div class="subpanel" id="clubPanel" style="display:none">
-    <h3>Přidat z oddílu <span id="clubPanelName" style="font-weight:400;color:var(--muted)"></span></h3>
-    <div class="toolbar">
-      <input type="text" id="memberFilter" class="grow" placeholder="Filtr jména…" autocomplete="off">
-      <label class="switch"><input type="checkbox" id="onlyActive" checked> jen aktivní hráči</label>
-      <button class="btn-secondary btn-sm" id="btnAddChecked">Přidat vybrané</button>
+  <div class="subpanel" id="clubPanel">
+    <h3>Přidat z oddílu</h3>
+    <div class="field" style="margin-top:0">
+      <label>Oddíl</label>
+      <div class="ac-wrap">
+        <input type="text" id="clubInput" placeholder="Začněte psát název oddílu…" autocomplete="off">
+        <div id="clubDrop" class="ac-drop" style="display:none"></div>
+      </div>
+      <span class="hint" id="clubHint"></span>
     </div>
-    <div class="checks" id="memberChecks"></div>
+    <div id="clubMembersWrap" style="display:none; margin-top:14px">
+      <div class="toolbar">
+        <input type="text" id="memberFilter" class="grow" placeholder="Filtr jména…" autocomplete="off">
+        <label class="switch"><input type="checkbox" id="onlyActive" checked> jen aktivní hráči</label>
+        <button class="btn-secondary btn-sm" id="btnAddChecked">Přidat vybrané</button>
+      </div>
+      <div class="checks" id="memberChecks"></div>
+    </div>
   </div>
 
   <!-- Přidat z celé DB -->
@@ -600,6 +604,27 @@ function onSoutezChange() {
   const comp = reg && reg.competitions.find(function(c) { return String(c.compId) === compId; });
   if (comp && !_soutezTextEdited) $('soutezText').value = comp.compName;
   updateFnamePreview();
+  prefillSection2();
+}
+
+/* Zvolené hodnoty z kroku 1 (sezóna/kraj/soutěž) předvyplní krok 2,
+   dokud do něj uživatel ručně nesáhne. */
+let _roTouched = false;
+async function prefillSection2() {
+  if (_roTouched) return;
+  const season = $('season').value, kraj = $('kraj').value, soutez = $('soutezSel').value;
+  if (!season) return;
+  if ($('roSeason').value !== season || !(state.roRegions && state.roRegions.length)) {
+    $('roSeason').value = season;
+    await onRoSeasonChange();
+  }
+  if (_roTouched) return;
+  if (kraj && (state.roRegions || []).some(function(r){ return r.key === kraj; })) {
+    $('roKraj').value = kraj; onRoKrajChange();
+  }
+  if (soutez && [].some.call($('roSoutez').options, function(o){ return o.value === soutez; })) {
+    $('roSoutez').value = soutez; await onRoSoutezChange();
+  }
 }
 
 /* ── Krok 2: nezávislý výběr sezóny / kraje / soutěže pro tým ─────── */
@@ -705,9 +730,13 @@ async function loadRoster() {
     const entries = normArr(data).slice().sort(function(a, b) {
       return (a.rosterPosition || 0) - (b.rosterPosition || 0);
     });
+    // předvyplň název družstva podle zvoleného týmu (pokud ho uživatel needitoval)
+    const teamOpt = $('teamSel').selectedOptions[0];
+    if (teamOpt && !_druzstvoEdited) { $('druzstvo').value = teamOpt.textContent; updateFnamePreview(); }
     state.players = [];           // vymaž aktuální soupisku, pak vlož načtenou
     renderPlayers();
     const total = entries.length;
+    let firstClubCode = '';       // č. oddílu prvního domácího hráče (bez H/C)
     for (let i = 0; i < entries.length; i++) {
       const p = rosterToPlayer(entries[i]);
       setMsg('<span class="spinner"></span>Doplňuji údaje hráčů ' + (i + 1) + '/' + total
@@ -719,11 +748,16 @@ async function loadRoster() {
         if (!p.jmeno) p.jmeno = String(m.fullName == null ? '' : m.fullName).trim();
         if (numOrBlank(m.czeStdElo) !== '')  p.eloLok = numOrBlank(m.czeStdElo);
         if (numOrBlank(m.fideStdElo) !== '') p.eloFide = numOrBlank(m.fideStdElo);
+        const oznSet = String(p.ozn || '').split(' ');
+        if (!firstClubCode && m.clubId && oznSet.indexOf('H') === -1 && oznSet.indexOf('C') === -1) {
+          firstClubCode = String(m.clubId);
+        }
       }
       addPlayerDedup(state.players, p);
       renderPlayers();
     }
     setMsg('✓ Načteno ' + state.players.length + ' hráčů ze soupisky týmu.', 'ok');
+    if (firstClubCode) await selectClubByCode(firstClubCode);   // předvyber oddíl v kroku 3
   } catch (e) {
     setMsg('Soupiska týmu: ' + e.message, 'err');
   } finally {
@@ -781,13 +815,19 @@ async function pickClub(club) {
   try {
     const data = await apiGet('/clubs/' + club.clubCode + '/members', 'členy oddílu ' + club.clubName);
     state.members = normArr(data);
-    $('clubHint').textContent = state.members.length + ' členů oddílu načteno.';
-    $('clubPanel').style.display = 'block';
-    $('clubPanelName').textContent = '— ' + club.clubName;
+    $('clubHint').textContent = club.clubName + ' — ' + state.members.length + ' členů načteno.';
+    $('clubMembersWrap').style.display = 'block';
     renderMemberChecks();
   } catch (e) {
     $('clubHint').innerHTML = '<span class="err">Členové: ' + esc(e.message) + '</span>';
   }
+}
+
+/* Předvybere oddíl podle č. oddílu (clubCode) a načte jeho členy. */
+async function selectClubByCode(code) {
+  await ensureClubs();
+  const club = state.clubs.find(function(c) { return String(c.clubCode) === String(code); });
+  if (club) await pickClub(club);
 }
 
 /* Je hráč (dle č. LOK) už na soupisce? */
@@ -879,10 +919,12 @@ function renderPlayers() {
   if (!has) { body.innerHTML = ''; return; }
   body.innerHTML = state.players.map(function(p, i) {
     const sel = String(p.ozn || '').split(' ').filter(Boolean);
-    const chips = OZN_CODES.map(function(code) {
-      const on = sel.indexOf(code) !== -1;
-      return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-ozn="' + code + '" '
-        + 'title="' + esc(OZN_TITLES[code]) + '">' + code + '</button>';
+    const chips = OZN_GROUPS.map(function(group) {
+      return '<div class="ozn-row">' + group.map(function(code) {
+        const on = sel.indexOf(code) !== -1;
+        return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-ozn="' + code + '" '
+          + 'title="' + esc(OZN_TITLES[code]) + '">' + code + '</button>';
+      }).join('') + '</div>';
     }).join('');
     return '<tr draggable="true" data-i="' + i + '">'
       + '<td class="col-h" title="Přetažením změňte pořadí">⠿</td>'
@@ -903,7 +945,7 @@ function renderPlayers() {
   }).join('');
   wirePlayerRows();
   // obnov panel „přidat z oddílu", aby zmizeli hráči už na soupisce
-  if ($('clubPanel') && $('clubPanel').style.display !== 'none') renderMemberChecks();
+  if ($('clubMembersWrap') && $('clubMembersWrap').style.display !== 'none') renderMemberChecks();
 }
 function wirePlayerRows() {
   const body = $('playersBody');
@@ -1043,6 +1085,7 @@ function applyHistory(i) {
 
 /* ── Inicializace ────────────────────────────────────────────────── */
 let _soutezTextEdited = false;
+let _druzstvoEdited = false;
 function init() {
   initSeasonSelect();
   $('season').addEventListener('change', loadCompetitions);
@@ -1050,17 +1093,22 @@ function init() {
   $('soutezSel').addEventListener('change', onSoutezChange);
   $('soutezText').addEventListener('input', function(){ _soutezTextEdited = true; updateFnamePreview(); });
   initRosterSeason();
-  $('roSeason').addEventListener('change', onRoSeasonChange);
-  $('roKraj').addEventListener('change', onRoKrajChange);
-  $('roSoutez').addEventListener('change', onRoSoutezChange);
+  // ruční zásah do kroku 2 vypne jeho automatické předvyplnění z kroku 1
+  $('roSeason').addEventListener('change', function(){ _roTouched = true; onRoSeasonChange(); });
+  $('roKraj').addEventListener('change', function(){ _roTouched = true; onRoKrajChange(); });
+  $('roSoutez').addEventListener('change', function(){ _roTouched = true; onRoSoutezChange(); });
   $('btnLoadRoster').addEventListener('click', loadRoster);
-  $('teamSel').addEventListener('change', function(){ $('btnLoadRoster').disabled = !$('teamSel').value; });
+  $('teamSel').addEventListener('change', function(){
+    $('btnLoadRoster').disabled = !$('teamSel').value;
+    const opt = $('teamSel').selectedOptions[0];
+    if (opt && opt.value && !_druzstvoEdited) { $('druzstvo').value = opt.textContent; updateFnamePreview(); }
+  });
 
   $('clubInput').addEventListener('input', onClubInput);
   $('clubInput').addEventListener('focus', onClubInput);
   $('clubInput').addEventListener('blur', function(){ setTimeout(function(){ $('clubDrop').style.display='none'; }, 150); });
 
-  $('druzstvo').addEventListener('input', updateFnamePreview);
+  $('druzstvo').addEventListener('input', function(){ _druzstvoEdited = true; updateFnamePreview(); });
   $('onlyActive').addEventListener('change', renderMemberChecks);
   $('memberFilter').addEventListener('input', renderMemberChecks);
   $('btnAddChecked').addEventListener('click', addCheckedMembers);

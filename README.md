@@ -7,19 +7,25 @@ berou z veřejného API `https://api.chess.cz/api`.
 
 ## Co umí
 
-1. **Hlavička** — výběr *kraje* a *soutěže* z API (`/competitions/{rok}`), našeptávač
-   *oddílu* z `/clubs/all`, název družstva.
-2. **Předvyplnění z existující soutěže** — nezávisle vybereš *sezónu, kraj,
-   soutěž a tým*; tlačítko **vymaže aktuální soupisku** a vloží načtenou
-   (`/competitions/{compId}/team/{teamId}/roster`). U každého hráče se z databáze
-   (`/members/{lokId}/cze`, příp. `/members/{fideId}/fide`) doplní rok narození
-   a č. FIDE — proto se při načítání zobrazuje průběh a chvíli to trvá.
-3. **Hráči** — tabulka odpovídající šabloně (Příjmení Jméno · Rok · Číslo LOK ·
-   Číslo FIDE · Označení K/ZK/H/V/C · Z?). Hráče lze přidat třemi způsoby:
-   - **z oddílu** (`/clubs/{clubCode}/members`) s přepínačem *jen aktivní hráči*,
+1. **Hlavička** — *sezóna · kraj · soutěž* z API (`/competitions/{rok}`); kraj a text
+   soutěže se zapíšou do hlavičky soupisky a zároveň předvyplní krok 2.
+2. **Předvyplnění z existující soutěže** — nezávisle (předvyplněno z kroku 1) vybereš
+   *sezónu, kraj, soutěž a tým* + *název družstva*; tlačítko **vymaže aktuální soupisku**
+   a vloží načtenou (`/competitions/{compId}/team/{teamId}/roster`). U každého hráče se
+   z databáze (`/members/{lokId}/cze`, příp. `/members/{fideId}/fide`) doplní rok
+   narození, č. FIDE a ELO — proto se při načítání zobrazuje průběh a chvíli to trvá.
+   Označení a základní sestava (Z) se předvyplní z `playerFlags`. Oddíl se předvybere
+   podle prvního domácího hráče (bez označení H/C).
+3. **Hráči** — tabulka odpovídající šabloně (Příjmení Jméno · Rok · Číslo LOK · *ELO LOK* ·
+   Číslo FIDE · *ELO FIDE* · Označení K/ZK/H/V/C · Z?); ELO sloupce jsou jen pro čtení.
+   Označení je multichoice s pravidly (K|ZK se vylučují, z H/V/C max jedna). Hráče lze
+   přidat třemi způsoby:
+   - **z oddílu** (`/clubs/{clubCode}/members`) s přepínačem *jen aktivní hráči* — výběr
+     oddílu je přímo v tomto panelu,
    - **z celé databáze ŠSČR** našeptávačem (`/members/name`, min. 4 znaky),
    - **ručně** (prázdný řádek).
-   Pořadí se mění tažením `⠿` nebo šipkami ▲▼, duplicity (dle čísla LOK) se nepřidají.
+   Hráči už na soupisce se v obou nabídkách skrývají. Pořadí se mění tažením `⠿` nebo
+   šipkami ▲▼, duplicity (dle čísla LOK) se nepřidají.
 4. **Generování xlsx** — doplní oficiální šablonu přes [ExcelJS](https://github.com/exceljs/exceljs)
    (zachová styly, ohraničení i vizuální „přetékání" textu z buněk). Při více než
    20 hráčích se řádky tabulky naklonují.
