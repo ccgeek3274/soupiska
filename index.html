@@ -67,7 +67,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 /* ── Tabulka hráčů ─────────────────────────────────────────── */
 .players { width:100%; border-collapse:collapse; font-size:13.5px; }
 .players th { text-align:left; font-size:11.5px; font-weight:600; color:var(--muted); text-transform:uppercase;
-  letter-spacing:.03em; padding:0 6px 8px; border-bottom:1px solid var(--border); }
+  letter-spacing:.03em; padding:0 6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
 .players td { padding:2px 3px; border-bottom:1px solid #eef0f3; vertical-align:middle; }
 .players tr.dragging { opacity:.4; } .players tr.drop-target td { box-shadow:inset 0 2px 0 var(--accent); }
 .players input, .players select { padding:5px 6px; font-size:13px; border:1px solid transparent; border-radius:3px; }
@@ -81,11 +81,11 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .chip { font-size:11px; font-weight:600; padding:3px 6px; line-height:1; border:1px solid var(--field);
   border-radius:4px; background:#fff; color:#475467; cursor:pointer; }
 .chip:hover { border-color:#c2c8d0; }
-.chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.chip.on { background:#dfe3e8; border-color:#c2c8d0; color:#1a1d23; }   /* zvoleno – decentní šedá */
 .col-h { width:30px; color:#b0b6c0; cursor:grab; text-align:center; user-select:none; font-size:16px; }
 .col-n { width:34px; color:var(--muted); text-align:center; }
-.col-rok { width:72px; } .col-id { width:76px; } .col-elo { width:66px; }
-.col-ozn { width:92px; } .col-z { width:42px; text-align:center; }
+.col-rok { width:78px; } .col-id { width:86px; } .col-elo { width:74px; }
+.col-ozn { width:92px; } .col-z { width:66px; }
 .col-act { width:78px; white-space:nowrap; text-align:right; }
 .icon-btn { background:none; border:none; padding:3px 5px; font-size:14px; color:var(--muted); cursor:pointer; border-radius:5px; }
 .icon-btn:hover { background:#f1f5f9; color:var(--text); } .icon-btn.del:hover { color:var(--err); }
@@ -139,7 +139,10 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     </div>
     <div>
       <label>Kraj</label>
-      <select id="kraj" class="xlsx-field"><option value="">— vyberte kraj —</option></select>
+      <div class="ac-wrap">
+        <input type="text" id="kraj" class="xlsx-field" placeholder="Začněte psát kraj…" autocomplete="off">
+        <div id="krajDrop" class="ac-drop" style="display:none"></div>
+      </div>
       <span class="hint" id="krajHint">Načítá se ze soutěží ŠSČR…</span>
     </div>
     <div>
@@ -196,9 +199,9 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     <thead><tr>
       <th class="col-h"></th><th class="col-n">#</th><th>Příjmení Jméno</th>
       <th class="col-rok">Rok nar.</th>
-      <th class="col-id">Číslo LOK</th><th class="col-elo">ELO LOK</th>
-      <th class="col-id">Číslo FIDE</th><th class="col-elo">ELO FIDE</th>
-      <th class="col-ozn">Označení</th><th class="col-z">Z?</th><th class="col-act"></th>
+      <th class="col-id">Číslo LOK</th><th class="col-id">Číslo FIDE</th>
+      <th class="col-elo">ELO LOK</th><th class="col-elo">ELO FIDE</th>
+      <th class="col-ozn">Označení</th><th class="col-z">Základ</th><th class="col-act"></th>
     </tr></thead>
     <tbody id="playersBody"></tbody>
   </table>
@@ -434,7 +437,7 @@ function fillSoupiska(ws, header, players) {
     ws.getCell('D' + r).value = p.lok === '' ? null : Number(p.lok);
     ws.getCell('E' + r).value = p.fide === '' ? null : Number(p.fide);
     ws.getCell('F' + r).value = p.ozn || '';
-    ws.getCell('G' + r).value = p.z ? 'ano' : '';
+    ws.getCell('G' + r).value = p.z ? 'Z' : '';
   });
   return ws;
 }
@@ -510,6 +513,7 @@ function apiGet(path, label, opts) {
 /* ── Stav aplikace ───────────────────────────────────────────────── */
 const state = {
   regions: [],          // parseCompetitions výstup (krok 1 – hlavička)
+  krajKey: '',          // klíč zvoleného kraje v kroku 1 (našeptávač)
   roRegions: [],        // parseCompetitions výstup (krok 2 – předvyplnění)
   clubs: [],            // {clubCode, clubName}
   selectedClubCode: '', // clubCode (string) zvoleného oddílu
@@ -558,17 +562,11 @@ async function loadCompetitions() {
   $('krajHint').textContent = 'Načítám soutěže ' + year + '…';
   try {
     state.regions = await fetchRegions(year);
-    const sel = $('kraj');
-    const prev = sel.value;
-    sel.innerHTML = '<option value="">— vyberte kraj —</option>';
-    state.regions.forEach(function(reg) {
-      const o = document.createElement('option');
-      o.value = reg.key;
-      o.textContent = reg.regionName;
-      sel.appendChild(o);
-    });
-    if (prev && state.regions.some(function(r){return r.key===prev;})) sel.value = prev;
-    $('krajHint').textContent = state.regions.length + ' krajů / svazů.';
+    // kraj je našeptávač – pokud dříve zvolený kraj v nové sezóně není, vyčisti
+    if (state.krajKey && !state.regions.some(function(r){ return r.key === state.krajKey; })) {
+      state.krajKey = ''; $('kraj').value = '';
+    }
+    $('krajHint').textContent = state.regions.length + ' krajů / svazů — začněte psát.';
     onKrajChange();
   } catch (e) {
     $('krajHint').innerHTML = '<span class="err">Soutěže se nepodařilo načíst: ' + esc(e.message) + '</span>';
@@ -576,7 +574,7 @@ async function loadCompetitions() {
 }
 
 function onKrajChange() {
-  const reg = state.regions.find(function(r) { return r.key === $('kraj').value; });
+  const reg = state.regions.find(function(r) { return r.key === state.krajKey; });
   const sel = $('soutezSel');
   if (!reg) {
     sel.innerHTML = '<option value="">— nejprve vyberte kraj —</option>';
@@ -598,9 +596,37 @@ function onKrajChange() {
 let _krajHeader = '';
 function setKrajHeader(v) { _krajHeader = v; }
 
+/* ── Kraj: našeptávač z načtených regionů ────────────────────────── */
+let _krajMatches = [];
+function renderKrajDrop(matches) {
+  _krajMatches = matches;
+  const drop = $('krajDrop');
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map(function(r, i) {
+    return '<button type="button" class="ac-item" data-i="' + i + '"><span class="nm">' + esc(r.regionName) + '</span></button>';
+  }).join('');
+  drop.style.display = 'block';
+  [].forEach.call(drop.querySelectorAll('.ac-item'), function(btn) {
+    btn.addEventListener('mousedown', function(e) { e.preventDefault(); });
+    btn.addEventListener('click', function() { pickKraj(_krajMatches[+btn.dataset.i]); });
+  });
+}
+function onKrajInput() {
+  if (!state.regions.length) { $('krajDrop').style.display = 'none'; return; }
+  const matches = state.regions.filter(function(r) { return matchName(r.regionName, $('kraj').value); }).slice(0, 20);
+  renderKrajDrop(matches);
+}
+function pickKraj(reg) {
+  if (!reg) return;
+  state.krajKey = reg.key;
+  $('kraj').value = reg.regionName;
+  $('krajDrop').style.display = 'none';
+  onKrajChange();
+}
+
 function onSoutezChange() {
   const compId = $('soutezSel').value;
-  const reg = state.regions.find(function(r) { return r.key === $('kraj').value; });
+  const reg = state.regions.find(function(r) { return r.key === state.krajKey; });
   const comp = reg && reg.competitions.find(function(c) { return String(c.compId) === compId; });
   if (comp && !_soutezTextEdited) $('soutezText').value = comp.compName;
   updateFnamePreview();
@@ -612,7 +638,7 @@ function onSoutezChange() {
 let _roTouched = false;
 async function prefillSection2() {
   if (_roTouched) return;
-  const season = $('season').value, kraj = $('kraj').value, soutez = $('soutezSel').value;
+  const season = $('season').value, kraj = state.krajKey, soutez = $('soutezSel').value;
   if (!season) return;
   if ($('roSeason').value !== season || !(state.roRegions && state.roRegions.length)) {
     $('roSeason').value = season;
@@ -932,11 +958,13 @@ function renderPlayers() {
       + '<td><input data-f="jmeno" value="' + esc(p.jmeno) + '" placeholder="Příjmení Jméno"></td>'
       + '<td><input data-f="rok" class="num" value="' + esc(p.rok) + '" inputmode="numeric"></td>'
       + '<td><input data-f="lok" class="num" value="' + esc(p.lok) + '" inputmode="numeric"></td>'
-      + '<td><input class="num ro" value="' + esc(p.eloLok) + '" readonly tabindex="-1"></td>'
       + '<td><input data-f="fide" class="num" value="' + esc(p.fide) + '" inputmode="numeric"></td>'
+      + '<td><input class="num ro" value="' + esc(p.eloLok) + '" readonly tabindex="-1"></td>'
       + '<td><input class="num ro" value="' + esc(p.eloFide) + '" readonly tabindex="-1"></td>'
       + '<td class="col-ozn"><div class="ozn-chips">' + chips + '</div></td>'
-      + '<td class="col-z"><input type="checkbox" data-f="z"' + (p.z ? ' checked' : '') + '></td>'
+      + '<td class="col-z"><div class="ozn-chips"><div class="ozn-row">'
+        + '<button type="button" class="chip' + (p.z ? ' on' : '') + '" data-z="1" title="základní sestava">Z</button>'
+        + '</div></div></td>'
       + '<td class="col-act">'
         + '<button class="icon-btn" data-act="up" title="Nahoru">▲</button>'
         + '<button class="icon-btn" data-act="down" title="Dolů">▼</button>'
@@ -969,7 +997,8 @@ function wirePlayerRows() {
   [].forEach.call(body.querySelectorAll('.chip'), function(btn) {
     btn.addEventListener('click', function() {
       const i = +btn.closest('tr').dataset.i;
-      state.players[i].ozn = toggleOzn(state.players[i].ozn, btn.dataset.ozn);
+      if (btn.dataset.z) state.players[i].z = !state.players[i].z;     // Základ (toggle)
+      else state.players[i].ozn = toggleOzn(state.players[i].ozn, btn.dataset.ozn);
       renderPlayers();
     });
   });
@@ -1089,7 +1118,9 @@ let _druzstvoEdited = false;
 function init() {
   initSeasonSelect();
   $('season').addEventListener('change', loadCompetitions);
-  $('kraj').addEventListener('change', onKrajChange);
+  $('kraj').addEventListener('input', onKrajInput);
+  $('kraj').addEventListener('focus', onKrajInput);
+  $('kraj').addEventListener('blur', function(){ setTimeout(function(){ $('krajDrop').style.display='none'; }, 150); });
   $('soutezSel').addEventListener('change', onSoutezChange);
   $('soutezText').addEventListener('input', function(){ _soutezTextEdited = true; updateFnamePreview(); });
   initRosterSeason();

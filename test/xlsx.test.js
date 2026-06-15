@@ -41,7 +41,7 @@ test('hlavička jde do B3/B4/B5/B6', async () => {
   assert.equal(ws.getCell('B6').value, HEADER.oddil);
 });
 
-test('řádek hráče: B-G na řádku 14, čísla jako number, Z→ano', async () => {
+test('řádek hráče: B-G na řádku 14, čísla jako number, Základ→Z', async () => {
   const ws = await fillAndReload(HEADER, [{ jmeno: 'Novák Radomír', rok: 1962, lok: 708, fide: 327298, ozn: 'K', z: true }]);
   assert.equal(ws.getCell('A14').value, '1.');
   assert.equal(ws.getCell('B14').value, 'Novák Radomír');
@@ -50,7 +50,7 @@ test('řádek hráče: B-G na řádku 14, čísla jako number, Z→ano', async (
   assert.equal(ws.getCell('D14').value, 708);
   assert.equal(ws.getCell('E14').value, 327298);
   assert.equal(ws.getCell('F14').value, 'K');
-  assert.equal(ws.getCell('G14').value, 'ano');
+  assert.equal(ws.getCell('G14').value, 'Z');
 });
 
 test('prázdné rok/FIDE → null (buňka zůstane prázdná), Z false → prázdné', async () => {
