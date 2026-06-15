@@ -5,6 +5,10 @@ sestavit **soupisku pro sezónu 2026/2027** a vygenerovat ji do oficiální
 šablony `E-soupiska_2026-2027.xlsx`. Data o oddílech, hráčích a soutěžích se
 berou z veřejného API `https://api.chess.cz/api`.
 
+Vizuální styl **„Paper & Ink"** — monochromatický inkoust na teplém papíru,
+monospace nadpisy a čísla (JetBrains Mono), ostré hrany (3 px) a jednotné „chip"
+přepínače značek. Pouze prezentační vrstva; veškerá logika je beze změny.
+
 ## Co umí
 
 1. **Hlavička** — *sezóna · kraj · soutěž* z API (`/competitions/{rok}`); kraj a text
@@ -25,7 +29,20 @@ berou z veřejného API `https://api.chess.cz/api`.
    - **z celé databáze ŠSČR** našeptávačem (`/members/name`, min. 4 znaky),
    - **ručně** (prázdný řádek).
    Hráči už na soupisce se v obou nabídkách skrývají. Pořadí se mění tažením `⠿` nebo
-   šipkami ▲▼, duplicity (dle čísla LOK) se nepřidají.
+   šipkami ↑↓, duplicity (dle čísla LOK) se nepřidají. Pruh kroku ukazuje počítadlo
+   *„X hráčů · Y v základní"*.
+   - **Základní sestava** — tlačítko `↻` ve záhlaví projde soupisku odshora a obsadí
+     Z prvním *N* hráčům (*N* = zadané číslo). Mezi nimi smí být jen omezený počet
+     písmenkových (H/V/C): nejvýše tolik, kolik je největší celé číslo *< N/2* (pro 8 → 3,
+     pro 5 → 2). Jakmile je v Z tolik písmenkových, další písmenkový se přeskočí (Z = ne)
+     a obsazování se posune na dalšího hráče — Z se tak „roztáhne" jen kvůli písmenkům
+     uvnitř sestavy; písmenka až za posledním Z (na konci soupisky) se neprojeví a počet
+     Z zůstává *N*. Z lze poté přepínat ručně.
+   - **Kontrola K/ZK** — je-li na soupisce víc než jeden kapitán (K) nebo zástupce (ZK),
+     dotčené chipy zčervenají.
+   - **Seřazení dle ELA** — šipka `▾` u záhlaví *ELO LOK* / *ELO FIDE* seřadí hráče
+     sestupně (po potvrzení). Původní pořadí se zapamatuje a tlačítkem **Obnovit**
+     u názvu kroku se vrátí.
 4. **Generování xlsx** — doplní oficiální šablonu přes [ExcelJS](https://github.com/exceljs/exceljs)
    (zachová styly, ohraničení i vizuální „přetékání" textu z buněk). Při více než
    20 hráčích se řádky tabulky naklonují.
