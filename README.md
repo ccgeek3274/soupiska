@@ -43,9 +43,26 @@ přepínače značek. Pouze prezentační vrstva; veškerá logika je beze změn
    - **Seřazení dle ELA** — šipka `▾` u záhlaví *ELO LOK* / *ELO FIDE* seřadí hráče
      sestupně (po potvrzení). Původní pořadí se zapamatuje a tlačítkem **Obnovit**
      u názvu kroku se vrátí.
-4. **Generování xlsx** — doplní oficiální šablonu přes [ExcelJS](https://github.com/exceljs/exceljs)
+4. **Doplňující údaje** — žlutá pole pod tabulkou hráčů ze šablony: **kapitán** a
+   **zástupce kapitána** (telefon, e-mail; *Příjmení Jméno* se předvyplní automaticky
+   podle chipů **K** / **ZK** v kroku 3, ručně přepsatelné — smazáním pole se automatika
+   obnoví), **hrací podmínky** (hrací místnost, přezůvky, preference jiného začátku,
+   požadavky na losování), **údaje pro komunikaci s družstvem** a **navrhovaný rozhodčí**
+   (obě sekce mají výchozí jednu položku a tlačítko *+ Přidat* pro další). Ve všech polích
+   *Příjmení Jméno* lze jméno vybrat z hráčů na soupisce (našeptávač); je-li ta osoba
+   uvedena jinde v sekci 4, předvyplní se k ní *telefon* a *e-mail*. Nevyplněná pole
+   zůstanou v xlsx prázdná.
+5. **Generování xlsx** — doplní oficiální šablonu přes [ExcelJS](https://github.com/exceljs/exceljs)
    (zachová styly, ohraničení i vizuální „přetékání" textu z buněk). Při více než
-   20 hráčích se řádky tabulky naklonují.
+   20 hráčích se řádky tabulky naklonují; obdobně se naklonují řádky v patičce, je-li
+   kontaktů pro komunikaci víc než 2 nebo rozhodčích víc než 1 (doplňující pole se
+   posunou s nimi).
+   - **Náhled před stažením** — tlačítko otevře přehled celé soupisky (hlavička, hráči,
+     kapitán/kontakty/podmínky) ke kontrole; xlsx lze stáhnout přímo z náhledu.
+   - **Uložit / načíst rozpracované (JSON)** — celý formulář se uloží do prostého JSON
+     (název má na konci datum a čas na minuty) a kdykoli načte zpět pro pozdější dokončení.
+     Každé uložení se zároveň zapamatuje v prohlížeči (`localStorage`, max 5 posledních)
+     a nabízí se k načtení v záhlaví stránky.
 
 ## Šetrnost k API chess.cz
 
@@ -93,7 +110,8 @@ npm test
 - `test/pure.test.js` — čisté funkce (mapování dat, dedup, název souboru,
   parsování soutěží) spuštěné nad inline `<script>` z `index.html` bez DOM.
 - `test/xlsx.test.js` — generování přes ExcelJS nad reálnou šablonou: hlavička,
-  řádky hráčů, zachování merge buněk, klonování řádků při >20 hráčích.
+  řádky hráčů, zachování merge buněk, klonování řádků při >20 hráčích, doplňující
+  pole (kapitán/kontakty/podmínky/rozhodčí) i jejich posun při >20 hráčích.
 
 Žádný test nevolá `api.chess.cz`.
 
